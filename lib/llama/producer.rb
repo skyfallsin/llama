@@ -13,6 +13,14 @@ module Llama
       end
     end
 
+    class PollingProducer < Base
+      attr_accessor :poll_period
+
+      def long_running?
+        true
+      end
+    end
+
     class DiskFile < Base 
       def initialize(filename)
         @filename = filename
@@ -24,9 +32,14 @@ module Llama
       end
     end
 
-    class RSS < Base
-      def initialize(url, strategy=:simple_rss)
+    class RSS < PollingProducer 
+      def initialize(url, opts={})
         @url = url
+        @poll_period = opts[:every]
+      end
+
+      def long_running?
+        !@poll_period.nil?
       end
 
       def produce(message)

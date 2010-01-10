@@ -81,23 +81,37 @@ module Llama
       def run
         if long_running?
           puts "Starting a long-running route..."
+          EventMachine::PeriodicTimer.new(poll_period) do
+            run_route!
+          end 
         else
           puts "Route is not long-running..."
-          messages = [Llama::Message::DefaultMessage.new]
-          @chain.each_with_index{|component, i| 
-            #puts "BEGIN #{i}: #{messages.inspect}"
-            messages.collect!{|m| component.respond(m)}.flatten!
-            #puts "END #{i}: #{messages.inspect}"
-          }
-
-          @result_queue.push(*messages) 
+          run_route!
         end
 
         set_deferred_status :succeeded
       end
 
+      def run_route!
+        messages = [Llama::Message::DefaultMessage.new]
+        @chain.each_with_index{|component, i| 
+          #puts "BEGIN #{i}: #{messages.inspect}"
+          messages.collect!{|m| component.respond(m)}.flatten!
+          #puts "END #{i}: #{messages.inspect}"
+        }
+        @result_queue.push(*messages) 
+      end
+
       def long_running?
-        !@chain.select{|x| x.producer? && x.long_running?}.empty? 
+        !long_running_producers.empty?
+      end
+
+      def long_running_producers
+        @chain.select{|x| x.producer? && x.long_running?}
+      end
+
+      def poll_period 
+        long_running_producers.first.poll_period
       end
 
       def inspect
@@ -140,7 +154,6 @@ module Llama
           router = new
           router.setup_routes
           router.run
-          EventMachine.stop
         end
       end
     end
@@ -156,7 +169,7 @@ if __FILE__ == $0
                 process(Llama::Processor::LineInput.new).
                 split_entries.to(Llama::Consumer::Stdout.new)
 
-      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss")).
+      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
                 split_entries.to(Llama::Consumer::Stdout.new)
     end
   end
