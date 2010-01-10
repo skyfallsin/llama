@@ -1,6 +1,6 @@
 = llama - an integration framework for tying together various services
 
-Llama is an integration-framework on top of EventMachine that helps with tying together various backend services. It's inspired by Mule and Apache Camel, two excellent Java integration frameworks that unfortunately have no Ruby counterparts. Llama aims to be super-lightweight and _easily_ customizable to suit your application's needs.
+Llama is an integration-framework on top of EventMachine that helps with tying together various backend services. It's inspired by Mule and Apache Camel, two excellent Java integration frameworks that unfortunately have no Ruby counterparts. Llama aims to be super-lightweight and _easily_ customizable to suit your application's needs. One of the main goals of the project is to provide a mediation/routing framework for hooking in the best-of-breed libraries for working with various external services. 
 
 As of now, Llama is not quite ready for prime-time, and will definitely undergo major API changes, so use with cuation.
 
