@@ -4,15 +4,17 @@ require 'eventmachine'
 require 'llama/component'
 require 'llama/producer'
 require 'llama/consumer'
+require 'llama/processor'
+require 'llama/eip'
 
 module Llama
   module Message
     class Base
       attr_accessor :body, :headers
-      def initialize
+      def initialize(opts={})
         @revisions = [] 
-        @body = nil
-        @headers = {}
+        @body = opts[:body] || nil
+        @headers = opts[:headers] || {}
       end
 
       def revision_count
@@ -56,6 +58,13 @@ module Llama
         self
       end
 
+      def process(component)
+        raise ProcessorComponentNotFoundException unless component.kind_of?(Llama::Processor::Base)
+        puts "PROCESSOR HOOK"
+        @chain.push(component)
+        self
+      end
+
       def to(component)
         raise ComponentNotFoundException unless component.kind_of?(Llama::Component) 
         raise ProducerComponentNotAllowed if component.kind_of?(Llama::Producer::Base)
@@ -63,21 +72,24 @@ module Llama
         self 
       end
 
+      def split_entries
+        @chain.push(Llama::EIP::Splitter.new)
+        self
+      end
+
       def run
         if long_running?
           puts "Starting a long-running route..."
         else
           puts "Route is not long-running..."
-          msg = Llama::Message::DefaultMessage.new 
+          messages = [Llama::Message::DefaultMessage.new]
           @chain.each_with_index{|component, i| 
-            #puts "BEGIN #{i}: #{msg}"
-            #puts component.inspect
-            msg = component.respond(msg)
-            #puts "END #{i}: #{msg}"
+            #puts "BEGIN #{i}: #{messages.inspect}"
+            messages.collect!{|m| component.respond(m)}.flatten!
+            #puts "END #{i}: #{messages.inspect}"
           }
 
-          puts "RESULT: #{msg}"
-          @result_queue << msg
+          @result_queue.push(*messages) 
         end
 
         set_deferred_status :succeeded
@@ -140,7 +152,11 @@ if __FILE__ == $0
   class MyRouter < Llama::Router
     def setup_routes
       add_route from(Llama::Producer::DiskFile.new("test.data")).
-                to(Llama::Consumer::Stdout.new)
+                process(Llama::Processor::LineInput.new).
+                split_entries.to(Llama::Consumer::Stdout.new)
+
+#      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss")).
+#                to(Llama::Consumer::Stdout.new)
     end
   end
 
