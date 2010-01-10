@@ -54,10 +54,12 @@ module Llama
       end
 
       def run
-        s = rand(10)
-        puts "sleeping for #{s} seconds"
-        sleep(s)
-        set_deferred_status :succeeded
+        loop do
+          s = rand(10)
+          puts "sleeping #{self.inspect} for #{s} seconds"
+          sleep(s)
+        end
+        #set_deferred_status :succeeded
       end
 
       def to_s
