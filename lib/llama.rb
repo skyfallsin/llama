@@ -54,6 +54,9 @@ module Llama
       end
 
       def run
+        s = rand(10)
+        puts "sleeping for #{s} seconds"
+        sleep(s)
         set_deferred_status :succeeded
       end
 
@@ -86,18 +89,21 @@ module Llama
       end
 
       def run
-        @routes.each{|r| 
+        @routes.collect{|r| 
           EventMachine::spawn do
             r.callback{ puts "done with #{r.inspect}" } 
             r.run
-          end.notify
-        }
+          end
+        }.each_with_index{|s,i| 
+          puts "notifying #{i}"
+          s.notify}
       end
 
       def self.start
         router = new
         router.setup_routes
         router.run
+        EventMachine.stop
       end
     end
   end
