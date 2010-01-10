@@ -6,39 +6,24 @@ require 'llama/producer'
 require 'llama/consumer'
 require 'llama/processor'
 require 'llama/eip'
+require 'llama/message'
 
 module Llama
-  module Message
-    class Base
-      attr_reader   :body 
-      attr_accessor :headers
-      def initialize(opts={})
-        @revisions = [] 
-        @body = opts[:body] || nil
-        @headers = opts[:headers] || {}
+  module Filter
+    class Base < Llama::Component
+
+    end
+
+    class DefaultFilter < Llama::Component
+      def initialize(&block)
+        @predicate = block
       end
 
-      def revision_count
-        @revisions.size
-      end
-
-      def body=(content)
-        @revisions << @body
-        @body = content
+      def process(message)
+        return nil unless @predicate.call(message)
+        return message
       end
     end
-
-    class DefaultMessage < Base
-    end
-
-    class JSONMessage < DefaultMessage 
-    end
-
-    class XmlMessage < DefaultMessage 
-    end
-  end
-
-  class Filter
   end
 
   module Routing 
@@ -61,8 +46,17 @@ module Llama
 
       def process(component)
         raise ProcessorComponentNotFoundException unless component.kind_of?(Llama::Processor::Base)
-        puts "PROCESSOR HOOK"
         @chain.push(component)
+        self
+      end
+
+      def filter(klass=nil, &block)
+        if klass
+          @chain.push(klass)
+        else
+          @chain.push(Llama::Filter::DefaultFilter.new(&block))
+        end
+
         self
       end
 
@@ -97,6 +91,7 @@ module Llama
         @chain.each_with_index{|component, i| 
           #puts "BEGIN #{i}: #{messages.inspect}"
           messages.collect!{|m| component.respond(m)}.flatten!
+          messages.compact!
           #puts "END #{i}: #{messages.inspect}"
         }
         @result_queue.push(*messages) 
@@ -167,10 +162,12 @@ if __FILE__ == $0
     def setup_routes
       add_route from(Llama::Producer::DiskFile.new("test.data")).
                 process(Llama::Processor::LineInput.new).
-                split_entries.to(Llama::Consumer::Stdout.new)
+                split_entries.
+                filter{|message| message.body == "one"}.
+                to(Llama::Consumer::Stdout.new)
 
-      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
-                split_entries.to(Llama::Consumer::Stdout.new)
+#      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
+#                split_entries.to(Llama::Consumer::Stdout.new)
     end
   end
 
