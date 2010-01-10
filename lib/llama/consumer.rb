@@ -17,9 +17,9 @@ module Llama
 
       def consume(message)
         if @print_key
-          puts "RECV: #{message.body.send(@print_key).inspect}"
+          puts "RECV: #{message.body.send(@print_key).inspect[0..100]}"
         else
-          puts "RECV: #{message.body.inspect}"
+          puts "RECV: #{message.body.inspect[0..100]}"
         end
         
         return message 

@@ -12,7 +12,7 @@ require 'llama/filter'
 module Llama
   module Routing 
     class Route
-      include EventMachine::Deferrable
+      include EM::Deferrable
 
       class ComponentNotFoundException < StandardError; end
       class ProducerComponentNotAllowed < StandardError; end
@@ -58,12 +58,10 @@ module Llama
 
       def run
         if long_running?
-          puts "Starting a long-running route..."
-          EventMachine::PeriodicTimer.new(poll_period) do
+          EM::PeriodicTimer.new(poll_period) do
             run_route!
           end 
         else
-          puts "Route is not long-running..."
           run_route!
         end
 
@@ -129,7 +127,7 @@ module Llama
       end
 
       def self.start
-        EventMachine::run do 
+        EM::run do 
           router = new
           router.setup_routes
           router.run
