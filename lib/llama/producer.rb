@@ -1,5 +1,6 @@
 require 'simple-rss'
 require 'open-uri'
+require 'rest_client'
 
 module Llama
   module Producer
@@ -15,9 +16,13 @@ module Llama
 
     class PollingProducer < Base
       attr_accessor :poll_period
+      
+      def initialize(opts={})
+        @poll_period = opts.delete(:every)
+      end
 
       def long_running?
-        true
+        !@poll_period.nil?
       end
     end
 
@@ -32,14 +37,25 @@ module Llama
       end
     end
 
+    class Http < PollingProducer
+      def initialize(url, opts={})
+        @url = url
+        @method = opts.delete(:method) || :get
+        super(opts)
+      end
+
+      def produce(message)
+        resp = RestClient.send(@method, @url, @opts)
+        message.headers = resp.headers
+        message.body = resp
+        return message
+      end
+    end
+
     class RSS < PollingProducer 
       def initialize(url, opts={})
         @url = url
-        @poll_period = opts[:every]
-      end
-
-      def long_running?
-        !@poll_period.nil?
+        super(opts)
       end
 
       def produce(message)
