@@ -73,7 +73,7 @@ module Llama
         @chain.each_with_index{|component, i| 
           #puts "BEGIN #{i}: #{messages.inspect}"
           messages.collect!{|m| component.respond(m)}.flatten!
-          messages.compact!
+          messages.compact! #filters return nil if predicate fails
           #puts "END #{i}: #{messages.inspect}"
         }
         @result_queue.push(*messages) 

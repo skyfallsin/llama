@@ -1,9 +1,11 @@
 = llama - an integration framework for tying together various services
 
-not even close to being released right now :)
+Llama is an integration-framework on top of EventMachine that helps with tying together various backend services. It's inspired by Mule and Apache Camel, two excellent Java integration frameworks that unfortunately have no Ruby counterparts. Llama aims to be super-lightweight and _easily_ customizable to suit your application's needs.
 
-      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
-                split_entries.to(STDOUT)
+As of now, Llama is not quite ready for prime-time, and will definitely undergo major API changes, so use with cuation.
+
+    add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
+              split_entries.to(STDOUT)
 
 
 == Note on Patches/Pull Requests
