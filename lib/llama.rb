@@ -8,7 +8,13 @@ module Llama
       block.call
     end
   end 
-  
+end
+
+require 'llama/component'
+require 'llama/producer'
+require 'llama/consumer'
+
+module Llama
   module Message
     class Base
     end
@@ -20,47 +26,13 @@ module Llama
     end
   end
 
-  class Component
-  end
-
-  module Producer
-    class Base < Component
-      def produce(*args)
-        raise "Subclass #{self} and define this method"
-      end
-    end
-
-    class DiskFile < Base 
-      def initialize(filename)
-        @filename = filename
-      end
-
-      def produce
-        puts "Producing from #{@filename}" 
-        return "HELLO"
-      end
-    end
-  end
-
-  module Consumer
-    class Base < Component
-      def consume(*args) 
-        raise "Subclass #{self} and define this method"
-      end
-    end
-
-    class Stdout < Base
-      def consume(message)
-        puts message
-      end
-    end
-  end
-
   class Filter
   end
 
   module Routing 
     class Route
+      include EventMachine::Deferrable
+
       class ComponentNotFoundException < StandardError; end
       class ProducerComponentNotAllowed < StandardError; end
 
@@ -70,7 +42,6 @@ module Llama
 
       def from(component)
         raise ComponentNotFoundException unless component.kind_of?(Llama::Component) 
-        puts "From #{component}"
         @chain.push(component)
         self
       end
@@ -78,15 +49,12 @@ module Llama
       def to(component)
         raise ComponentNotFoundException unless component.kind_of?(Llama::Component) 
         raise ProducerComponentNotAllowed if component.kind_of?(Llama::Producer::Base)
-        puts "To #{component}"
         @chain.push(component)
         self 
       end
 
       def run
-        EventMachine::spawn {
-          puts "Running #{self}"
-        }
+        set_deferred_status :succeeded
       end
 
       def to_s
@@ -114,10 +82,16 @@ module Llama
 
       def add(built_route)
         @routes.push(built_route)
+        puts "added #{built_route.inspect}"
       end
 
       def run
-        @routes.each{|r| r.run}
+        @routes.each{|r| 
+          EventMachine::spawn do
+            r.callback{ puts "done with #{r.inspect}" } 
+            r.run
+          end.notify
+        }
       end
 
       def self.start
@@ -129,13 +103,18 @@ module Llama
   end
 end
 
-Llama::start do
-  class MyRouter < Llama::Routing::Router
-    def setup_routes
-      add from(Llama::Producer::DiskFile.new("test.data")).
-          to(Llama::Consumer::Stdout.new)
-    end
-  end
+if __FILE__ == $0
+  Llama::start do
+    class MyRouter < Llama::Routing::Router
+      def setup_routes
+        add from(Llama::Producer::DiskFile.new("test.data")).
+            to(Llama::Consumer::Stdout.new)
 
-  MyRouter.start
+        add from(Llama::Producer::DiskFile.new("hello.data")).
+            to(Llama::Consumer::Stdout.new)
+      end
+    end
+
+    MyRouter.start
+  end
 end
