@@ -1,15 +1,6 @@
 require 'rubygems'
 require 'eventmachine'
 
-module Llama
-  def self.start(&block)
-    EventMachine::run do
-      puts "Starting Llama..."
-      block.call
-    end
-  end 
-end
-
 require 'llama/component'
 require 'llama/producer'
 require 'llama/consumer'
@@ -100,30 +91,30 @@ module Llama
       end
 
       def self.start
-        router = new
-        router.setup_routes
-        router.run
-        EventMachine.stop
+        EventMachine::start do 
+          router = new
+          router.setup_routes
+          router.run
+          EventMachine.stop
+        end
       end
     end
   end
 end
 
 if __FILE__ == $0
-  Llama::start do
-    class MyRouter < Llama::Routing::Router
-      def setup_routes
-        add from(Llama::Producer::DiskFile.new("test.data")).
-            to(Llama::Consumer::Stdout.new)
+  class MyRouter < Llama::Routing::Router
+    def setup_routes
+      add from(Llama::Producer::DiskFile.new("test.data")).
+          to(Llama::Consumer::Stdout.new)
 
-        add from(Llama::Producer::DiskFile.new("hello.data")).
-            to(Llama::Consumer::Stdout.new)
+      add from(Llama::Producer::DiskFile.new("hello.data")).
+          to(Llama::Consumer::Stdout.new)
 
-        add from(Llama::Producer::DiskFile.new("monkey.data")).
-            to(Llama::Consumer::Stdout.new)
-      end
+      add from(Llama::Producer::DiskFile.new("monkey.data")).
+          to(Llama::Consumer::Stdout.new)
     end
-
-    MyRouter.start
   end
+
+  MyRouter.start
 end
