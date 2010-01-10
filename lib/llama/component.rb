@@ -5,8 +5,19 @@ module Llama
         when Llama::Producer::Base: produce(message)
         when Llama::Consumer::Base: consume(message)
       end
-      message.revision += 1
       return message
+    end
+
+    def producer?
+      false
+    end
+
+    def consumer?
+      false
+    end
+
+    def long_running?
+      false
     end
   end
 end

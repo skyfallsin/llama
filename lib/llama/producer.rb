@@ -4,6 +4,10 @@ module Llama
       def produce(*args)
         raise "Subclass #{self} and define this method"
       end
+
+      def producer?
+        true
+      end
     end
 
     class DiskFile < Base 
@@ -12,7 +16,7 @@ module Llama
       end
 
       def produce(message)
-        puts "Producing from #{@filename}" 
+#        puts "Producing from #{@filename}" 
         File.open(@filename){|f| 
           message.body = f.read
         } 

@@ -4,6 +4,10 @@ module Llama
       def consume(*args) 
         raise "Subclass #{self} and define this method"
       end
+
+      def consumer?
+        true
+      end
     end
 
     class Stdout < Base

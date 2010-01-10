@@ -8,11 +8,20 @@ require 'llama/consumer'
 module Llama
   module Message
     class Base
-      attr_accessor :revision, :body, :headers
+      attr_accessor :body, :headers
       def initialize
-        @revision = 0 
+        @revisions = [] 
         @body = nil
         @headers = {}
+      end
+
+      def revision_count
+        @revisions.size
+      end
+
+      def body=(content)
+        @revisions << @body
+        @body = content
       end
     end
 
@@ -67,7 +76,7 @@ module Llama
             #puts "END #{i}: #{msg}"
           }
 
-          puts "message has #{msg.revision} revisions"
+          puts "RESULT: #{msg}"
           @result_queue << msg
         end
 
@@ -75,7 +84,7 @@ module Llama
       end
 
       def long_running?
-        false
+        !@chain.select{|x| x.producer? && x.long_running?}.empty? 
       end
 
       def inspect
@@ -107,7 +116,7 @@ module Llama
       def run
         @routes.collect{|r| 
           Thread.new do
-            r.callback{ puts "done with #{r.inspect}" } 
+            r.callback{ puts "done with #{r}" } 
             r.run
           end
         }.each{|thread| thread.join}
