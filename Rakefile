@@ -5,12 +5,15 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "llama"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{an integration framework}
+    gem.description = %Q{}
     gem.email = "pradeepe@gmail.com"
     gem.homepage = "http://github.com/skyfallsin/llama"
     gem.authors = ["Pradeep Elankumaran"]
-    gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.add_development_dependency "eventmachine", ">= 0"
+    gem.add_development_dependency "simple-rss", ">= 0"
+    gem.add_development_dependency "open-uri", ">= 0"
+
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
