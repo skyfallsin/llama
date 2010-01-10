@@ -10,7 +10,8 @@ require 'llama/eip'
 module Llama
   module Message
     class Base
-      attr_accessor :body, :headers
+      attr_reader   :body 
+      attr_accessor :headers
       def initialize(opts={})
         @revisions = [] 
         @body = opts[:body] || nil
@@ -155,8 +156,8 @@ if __FILE__ == $0
                 process(Llama::Processor::LineInput.new).
                 split_entries.to(Llama::Consumer::Stdout.new)
 
-#      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss")).
-#                to(Llama::Consumer::Stdout.new)
+      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss")).
+                split_entries.to(Llama::Consumer::Stdout.new)
     end
   end
 

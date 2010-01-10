@@ -11,8 +11,17 @@ module Llama
     end
 
     class Stdout < Base
+      def initialize(print_key=nil)
+        @print_key = print_key
+      end
+
       def consume(message)
-        puts "RECV: #{message.body}"
+        if @print_key
+          puts "RECV: #{message.body.send(@print_key).inspect}"
+        else
+          puts "RECV: #{message.body.inspect}"
+        end
+        
         return message 
       end
     end

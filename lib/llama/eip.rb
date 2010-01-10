@@ -7,7 +7,7 @@ module Llama
       class CannotSplitNonEnumerableMessageBody < StandardError; end
 
       def process(message)
-        return CannotSplitNonEnumerableMessageBody unless message.body.respond_to?(:each)
+        raise CannotSplitNonEnumerableMessageBody unless message.body.kind_of?(Array)
         return message.body.collect{|entry|
           message.class.new(:headers => message.headers, :body => entry)
         }

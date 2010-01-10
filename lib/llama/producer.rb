@@ -1,3 +1,6 @@
+require 'simple-rss'
+require 'open-uri'
+
 module Llama
   module Producer
     class Base < Component
@@ -16,12 +19,21 @@ module Llama
       end
 
       def produce(message)
-#        puts "Producing from #{@filename}" 
-        File.open(@filename){|f| 
-          message.body = f.read
-        } 
-
+        File.open(@filename){|f| message.body = f.read} 
         return message
+      end
+    end
+
+    class RSS < Base
+      def initialize(url, strategy=:simple_rss)
+        @url = url
+      end
+
+      def produce(message)
+        rss = SimpleRSS.parse open(@url)
+        return Llama::Message::DefaultMessage.new(
+                  :headers => {:title => rss.title, :link => rss.link}, 
+                  :body => rss.items) #body is splittable
       end
     end
   end
