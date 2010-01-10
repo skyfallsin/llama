@@ -29,6 +29,7 @@ module Llama
 
       def initialize(*args)
         @chain = []
+        @result_queue = []
       end
 
       def from(component)
@@ -45,12 +46,25 @@ module Llama
       end
 
       def run
-        loop do
-          s = rand(10)
-          puts "sleeping #{self.inspect} for #{s} seconds"
-          sleep(s)
+        if long_running?
+          puts "Starting a long-running route..."
+        else
+          puts "Route is not long-running..."
+          msg = nil
+          @chain.each_with_index{|component, i| 
+            #puts "BEGIN #{i}: #{msg}"
+            #puts component.inspect
+            msg = component.respond(msg)
+            #puts "END #{i}: #{msg}"
+          }
+          @result_queue << msg
         end
-        #set_deferred_status :succeeded
+
+        set_deferred_status :succeeded
+      end
+
+      def long_running?
+        false
       end
 
       def to_s
@@ -76,10 +90,11 @@ module Llama
         return Route.new.from(component) 
       end
 
-      def add(built_route)
+      def add_route(built_route)
         @routes.push(built_route)
         puts "added #{built_route.inspect}"
       end
+      alias :add :add_route
 
       def run
         @routes.collect{|r| 
@@ -100,19 +115,15 @@ module Llama
       end
     end
   end
+
+  Llama::Router = Llama::Routing::Router
 end
 
 if __FILE__ == $0
-  class MyRouter < Llama::Routing::Router
+  class MyRouter < Llama::Router
     def setup_routes
-      add from(Llama::Producer::DiskFile.new("test.data")).
-          to(Llama::Consumer::Stdout.new)
-
-      add from(Llama::Producer::DiskFile.new("hello.data")).
-          to(Llama::Consumer::Stdout.new)
-
-      add from(Llama::Producer::DiskFile.new("monkey.data")).
-          to(Llama::Consumer::Stdout.new)
+      add_route from(Llama::Producer::DiskFile.new("test.data")).
+                to(Llama::Consumer::Stdout.new)
     end
   end
 

@@ -8,7 +8,8 @@ module Llama
 
     class Stdout < Base
       def consume(message)
-        puts message
+        puts "RECV: #{message.inspect}"
+        return message 
       end
     end
   end

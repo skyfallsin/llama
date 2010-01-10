@@ -11,7 +11,7 @@ module Llama
         @filename = filename
       end
 
-      def produce
+      def produce(message)
         puts "Producing from #{@filename}" 
         return "HELLO"
       end
