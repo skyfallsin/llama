@@ -57,7 +57,9 @@ module Llama
       end
 
       def run
-        if long_running?
+        if evented?
+          run_evented_route!
+        elsif polling?
           EM::PeriodicTimer.new(poll_period) do
             run_route!
           end 
@@ -68,8 +70,18 @@ module Llama
         set_deferred_status :succeeded
       end
 
-      def run_route!
-        messages = [Llama::Message::DefaultMessage.new]
+      def run_evented_route!
+        # remove the producer from the chain, and attach the rest of the route as a callback
+        producer = evented_producers.first
+        @chain.delete(producer)
+        producer.respond(Llama::Message::DefaultMessage.new)
+        producer.add_hook do |message|
+          run_route!(message)
+        end
+      end
+
+      def run_route!(message=Llama::Message::DefaultMessage.new)
+        messages = [message]
         @chain.each_with_index{|component, i| 
           #puts "BEGIN #{i}: #{messages.inspect}"
           messages.collect!{|m| component.respond(m)}.flatten!
@@ -79,16 +91,24 @@ module Llama
         @result_queue.push(*messages) 
       end
 
-      def long_running?
-        !long_running_producers.empty?
+      def evented?
+        !evented_producers.empty?
       end
 
-      def long_running_producers
-        @chain.select{|x| x.producer? && x.long_running?}
+      def evented_producers
+        @chain.select{|x| x.producer? && x.evented?}
+      end
+
+      def polling?
+        !polling_producers.empty?
+      end
+
+      def polling_producers 
+        @chain.select{|x| x.producer? && x.polling?}
       end
 
       def poll_period 
-        long_running_producers.first.poll_period
+        polling_producers.first.poll_period
       end
 
       def inspect
@@ -120,7 +140,6 @@ module Llama
       def run
         @routes.collect{|r| 
           Thread.new do
-            r.callback{ puts "done with #{r}" } 
             r.run
           end
         }.each{|thread| thread.join}
@@ -142,17 +161,20 @@ end
 if __FILE__ == $0
   class MyRouter < Llama::Router
     def setup_routes
-      add_route from(Llama::Producer::DiskFile.new("test.data")).
-                process(Llama::Processor::LineInput.new).
-                split_entries.
-                filter{|message| message.body == "one"}.
+#      add_route from(Llama::Producer::DiskFile.new("test.data")).
+#                process(Llama::Processor::LineInput.new).
+#                split_entries.
+#                filter{|message| message.body == "one"}.
+#                to(Llama::Consumer::Stdout.new)
+
+#      add_route from(Llama::Producer::Http.new("http://yahoo.com")).
+#                to(Llama::Consumer::Stdout.new)
+
+      add_route from(Llama::Producer::Stomp.new("localhost", 61613, 'llama')).
                 to(Llama::Consumer::Stdout.new)
 
-#      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
-#                split_entries.to(Llama::Consumer::Stdout.new)
-
-      add_route from(Llama::Producer::Http.new("http://yahoo.com")).
-                to(Llama::Consumer::Stdout.new)
+      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
+                split_entries.to(Llama::Consumer::Stdout.new)
     end
   end
 

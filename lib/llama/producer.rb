@@ -1,6 +1,7 @@
 require 'simple-rss'
 require 'open-uri'
 require 'rest_client'
+require 'stomp'
 
 module Llama
   module Producer
@@ -21,7 +22,7 @@ module Llama
         @poll_period = opts.delete(:every)
       end
 
-      def long_running?
+      def polling?
         !@poll_period.nil?
       end
     end
@@ -34,6 +35,37 @@ module Llama
       def produce(message)
         File.open(@filename){|f| message.body = f.read} 
         return message
+      end
+    end
+
+    class EventedProducer < Base
+      def add_hook(&block)
+        @hook = block
+      end
+
+      def evented?
+        true
+      end
+    end
+
+    class Stomp < EventedProducer 
+      class NoCallBackHook < StandardError; end
+
+      def initialize(host, port, queue, headers={})
+        @host, @port, @queue, @headers = host, port, queue, headers
+      end
+
+      def produce(message)
+        client = ::Stomp::Client.open "stomp://#{@host}:#{@port}"
+        client.subscribe("/queue/#{@queue}", @headers) do |msg|
+          post(msg)
+        end
+      end
+
+      def post(msg)
+        raise NoCallBackHook unless @hook
+        msg = Llama::Message::DefaultMessage.new(:headers => msg.headers, :body => msg.body)
+        @hook.call(msg)
       end
     end
 

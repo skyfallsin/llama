@@ -17,7 +17,11 @@ module Llama
       false
     end
 
-    def long_running?
+    def polling?
+      false
+    end
+
+    def evented?
       false
     end
   end
