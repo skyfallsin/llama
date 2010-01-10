@@ -90,13 +90,11 @@ module Llama
 
       def run
         @routes.collect{|r| 
-          EventMachine::spawn do
+          Thread.new do
             r.callback{ puts "done with #{r.inspect}" } 
             r.run
           end
-        }.each_with_index{|s,i| 
-          puts "notifying #{i}"
-          s.notify}
+        }.each{|thread| thread.join}
       end
 
       def self.start
@@ -117,6 +115,9 @@ if __FILE__ == $0
             to(Llama::Consumer::Stdout.new)
 
         add from(Llama::Producer::DiskFile.new("hello.data")).
+            to(Llama::Consumer::Stdout.new)
+
+        add from(Llama::Producer::DiskFile.new("monkey.data")).
             to(Llama::Consumer::Stdout.new)
       end
     end
