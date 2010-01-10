@@ -8,12 +8,21 @@ require 'llama/consumer'
 module Llama
   module Message
     class Base
+      attr_accessor :revision, :body, :headers
+      def initialize
+        @revision = 0 
+        @body = nil
+        @headers = {}
+      end
     end
 
-    class JSONMessage < Base
+    class DefaultMessage < Base
     end
 
-    class XmlMessage < Base
+    class JSONMessage < DefaultMessage 
+    end
+
+    class XmlMessage < DefaultMessage 
     end
   end
 
@@ -50,13 +59,15 @@ module Llama
           puts "Starting a long-running route..."
         else
           puts "Route is not long-running..."
-          msg = nil
+          msg = Llama::Message::DefaultMessage.new 
           @chain.each_with_index{|component, i| 
             #puts "BEGIN #{i}: #{msg}"
             #puts component.inspect
             msg = component.respond(msg)
             #puts "END #{i}: #{msg}"
           }
+
+          puts "message has #{msg.revision} revisions"
           @result_queue << msg
         end
 
@@ -67,13 +78,10 @@ module Llama
         false
       end
 
-      def to_s
-        @chain.to_s
-      end
-
       def inspect
         @chain.inspect
       end
+      alias :to_s :inspect
     end
 
     class Router

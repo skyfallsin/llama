@@ -13,7 +13,11 @@ module Llama
 
       def produce(message)
         puts "Producing from #{@filename}" 
-        return "HELLO"
+        File.open(@filename){|f| 
+          message.body = f.read
+        } 
+
+        return message
       end
     end
   end
