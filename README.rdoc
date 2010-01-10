@@ -1,5 +1,9 @@
-= Llama - a (hopefully) powerful integration framework
+= llama - an integration framework for tying together various services
 
+not even close to being released right now :)
+
+      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
+                split_entries.to(STDOUT)
 
 
 == Note on Patches/Pull Requests
