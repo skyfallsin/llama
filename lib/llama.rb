@@ -166,8 +166,8 @@ if __FILE__ == $0
                 filter{|message| message.body == "one"}.
                 to(Llama::Consumer::Stdout.new)
 
-#      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
-#                split_entries.to(Llama::Consumer::Stdout.new)
+      add_route from(Llama::Producer::RSS.new("http://reddit.com/.rss", :every => 3)).
+                split_entries.to(Llama::Consumer::Stdout.new)
     end
   end
 
