@@ -1,6 +1,6 @@
-= llama
+= Llama - a (hopefully) powerful integration framework
 
-Description goes here.
+
 
 == Note on Patches/Pull Requests
  
