@@ -7,25 +7,9 @@ require 'llama/consumer'
 require 'llama/processor'
 require 'llama/eip'
 require 'llama/message'
+require 'llama/filter'
 
 module Llama
-  module Filter
-    class Base < Llama::Component
-
-    end
-
-    class DefaultFilter < Llama::Component
-      def initialize(&block)
-        @predicate = block
-      end
-
-      def process(message)
-        return nil unless @predicate.call(message)
-        return message
-      end
-    end
-  end
-
   module Routing 
     class Route
       include EventMachine::Deferrable
