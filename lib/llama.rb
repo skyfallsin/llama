@@ -91,7 +91,7 @@ module Llama
       end
 
       def self.start
-        EventMachine::start do 
+        EventMachine::run do 
           router = new
           router.setup_routes
           router.run
